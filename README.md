@@ -1,0 +1,155 @@
+# Ansible Collection - skrepski.tfstate
+
+Collection with inventory plugin from Terraform state files.
+
+## Description
+
+- Works with an existing Terraform state files stored in host or S3 bucket.
+- Supports providers [dmacvicar/libvirt](https://registry.terraform.io/providers/dmacvicar/libvirt/latest), [yandex-cloud/yandex](https://registry.terraform.io/providers/yandex-cloud/yandex/latest).
+- Allows to generate group for each host.
+- Allows to set up groups structure.
+- Allows to set Terraform state outputs as host/group variables.
+- Does not support caching, constructable.
+- Uses a YAML configuration file that ends with C(tfstate.{yml|yaml}).
+
+## Requirements
+
+The collection requires Ansible Core 2.15 or later and thus Python 3.9 or later.
+
+If you plan to use S3 as Terraform state files storage, collection requires [boto3](https://pypi.org/project/boto3/) package. Use `pip install -r requirements.txt` to install it.
+
+## Included content
+
+### TFState inventory
+
+To use the inventory plugin provided by this collection you will need to enable the plugin in your `.ansible.cfg`.
+(You may need to enable some of the defaults if you use them)
+
+```
+enable_plugins = skrepski.tfstate.tfstate_inventory
+```
+
+Inventory file must ends in `tfstate.yml` or `tfstate.yaml`. For example, `inventory_tfstate.yml`:
+
+```yaml
+---
+plugin: skrepski.tfstate.tfstate_inventory
+source_type: local
+local_path: /path/to/terraform/files
+search_pattern: "**/*.tfstate"
+```
+
+#### Options
+
+Option | Description
+:----- | :----------
+`source_type` | The type of Terraform state files source. Allowed values `local`, `s3`.<br/>**Required**
+`local_path` | Absolute path to directory contains Terraform state files.<br/>**Required when `source_type=local`**
+`s3_config` | A group of key-values used to connect to S3 bucket.<br/>**Required when `source_type=s3`**
+`search_pattern` | Glob like search pattern to lookup Terraform state files.<br/>**Required**<br/>Examples: `**/*.tfstate`, `production/**/kafka*.tfstate`
+`collect_public_ips` | Collect only hosts with public (NAT/Bridge) IP addresses if True.<br/>In this case inventory `ansible_host` set to public IP address.<br/>Else `ansible_host` set to local IP address.<br/>`False` by default
+`create_hosts_groups` | Create group named like host except ends digits.<br/>Adds `hosts_groups_postfix` at group name end.<br/>All dashes (`-`) in group name changes to underscore (`_`).<br/>`True` by default
+`hosts_groups_postfix` | Postfix for hosts groups<br/>Ignores by `create_hosts_groups=False`.<br/>`_group` by default
+`group_variables_from_output` | Adds groups variables from Terraform state output values
+`host_variables_from_output` | Adds hosts variables from Terraform state output values
+
+##### `s3_config` description
+
+A group of key-values used to connect to S3 bucket.<br/>Required when `source_type=s3`.
+
+Key | Description
+:-- | :----------
+`endpoint` | **Required**. S3 endpoint with port (if required).<br/>If the value is not specified in the inventory file, the value of environment variable `TFSTATE_S3_ENDPOINT` will be used instead.
+`region` | S3 region name.<br/>If the value is not specified in the inventory file, the value of environment variable `TFSTATE_S3_ENDPOINT` will be used instead.
+`bucket` | **Required**. S3 bucket name.<br/>If the value is not specified in the inventory file, the value of environment variable `TFSTATE_S3_BUCKET` will be used instead.
+`access_key` | **Required**. S3 access key id.<br/>If the value is not specified in the inventory file, the value of environment variables `TFSTATE_S3_ACCESS_KEY`, `AWS_ACCESS_KEY_ID` will be used instead.
+`secret_key` | **Required**. S3 access secret key.<br/>If the value is not specified in the inventory file, the value of environment variables `TFSTATE_S3_SECRET_KEY`, `AWS_SECRET_ACCESS_KEY` will be used instead.
+
+See [tfstate_inventory.py](plugins/inventory/tfstate_inventory.py) for additional details and options on how to exclude groups and hosts and add additional host variables.
+
+## Installation
+
+You can install the skrepski.tfstate collection with the Ansible Galaxy CLI:
+
+```shell
+ansible-galaxy collection install skrepski.tfstate
+```
+
+You can also include it in a requirements.yml file and install it with `ansible-galaxy collection install -r requirements.yml`, using the format:
+
+```yaml
+---
+collections:
+  - name: skrepski.tfstate
+```
+
+## Usage
+
+You can test retreiving hosts using _ansible-inventory_.
+```shell
+ansible-inventory -i inventory_tfstate.yml --list
+```
+
+To run a playbook using the inventory you can do something like:
+
+```shell
+ansible-playbook -i inventory_tfstate.yml playbook.yml
+```
+
+### Groups structure 
+
+To set up groups structure use basic Ansible inventory file. For example:
+
+```yaml
+# groups_structure.yml
+---
+all:
+  children:
+    k8s_group:
+      children:
+        k8s_master_group:  # group generated by k8s-master-01, k8s-master-02, k8s-master-03 hosts
+        k8s_node_group:    # group generated by k8s-node-01, k8s-node-02, k8s-node-03 hosts
+```
+
+Add group structure inventory by:
+```shell
+ansible-inventory -i groups_structure.yml -i inventory_tfstate.yml --all
+```
+
+Or place it in one directory
+```
+└── inventory
+    ├── groups_structure.yml
+    └── tfstate_inventory.yml
+```
+and run
+```shell
+ansible-inventory -i inventory --all
+```
+
+### Variables from outputs
+
+You can set up group/host variables from Terraform states outputs by `group_variables_from_output`, `host_variables_from_output` config options. For example:
+
+```yaml
+group_variables_from_output:
+  all:  # default group, always exists
+    - prometheus_ip
+  k8s_group:  # group from groups_structure.yml
+    - domain_name
+  k8s_master_group:  # group generated by k8s-master-01, k8s-master-02, k8s-master-03 hosts
+    - some_variable
+    - another_variable
+```
+
+Ansible process inventory files in order from CLI or filename in inventory directory.
+
+If you want to set tfstate output variables for groups/hosts not from tfstate_inventory, you must place their inventory files before tfstate_inventory file.
+
+In case above command `ansible-inventory -i inventory_tfstate.yml -i group_structure.yml --list` will display warning and will not set variable `domain_name` for all `k8s_group` hosts. Correct variant is `ansible-inventory -i group_structure.yml -i inventory_tfstate.yml --list`.
+
+## Support
+
+If you encounter issues or have questions, you can submit a support request through the following channels:
+
+- GitHub Issues: Report bugs, request features, or ask questions by opening an issue in the [GitHub repository](https://github.com/skrepski/ansible-collection-tfstate).
