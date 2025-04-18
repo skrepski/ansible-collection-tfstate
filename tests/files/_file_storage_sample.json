@@ -1,0 +1,261 @@
+{
+    "version": 4,
+    "terraform_version": "1.8.3",
+    "serial": 4,
+    "lineage": "a7b06d5d-1568-c017-900a-c24e34ca30a3",
+    "outputs": {
+      "internal_ip": {
+        "value": "192.168.1.9",
+        "type": "string"
+      },
+      "nat_ip": {
+        "value": "123.123.123.123",
+        "type": "string"
+      }
+    },
+    "resources": [
+      {
+        "mode": "data",
+        "type": "yandex_compute_image",
+        "name": "instance_image",
+        "provider": "provider[\"registry.terraform.io/yandex-cloud/yandex\"]",
+        "instances": [
+          {
+            "schema_version": 0,
+            "attributes": {
+              "created_at": "2025-03-31T11:03:33Z",
+              "description": "Ubuntu 20.04 lts v20250324131804",
+              "family": "ubuntu-2004-lts",
+              "folder_id": "standard-images",
+              "hardware_generation": [
+                {
+                  "generation2_features": [],
+                  "legacy_features": [
+                    {
+                      "pci_topology": "PCI_TOPOLOGY_V2"
+                    }
+                  ]
+                }
+              ],
+              "id": "id",
+              "image_id": "image_id",
+              "kms_key_id": null,
+              "labels": {
+                "version": "20250324131804"
+              },
+              "min_disk_size": 5,
+              "name": "ubuntu-20-04-lts-v20250331",
+              "os_type": "linux",
+              "pooled": true,
+              "product_ids": [
+                "product_id"
+              ],
+              "size": 2,
+              "status": "ready"
+            },
+            "sensitive_attributes": []
+          }
+        ]
+      },
+      {
+        "mode": "data",
+        "type": "yandex_iam_service_account",
+        "name": "sa",
+        "provider": "provider[\"registry.terraform.io/yandex-cloud/yandex\"]",
+        "instances": [
+          {
+            "schema_version": 0,
+            "attributes": {
+              "created_at": "2025-04-07T14:20:00Z",
+              "description": "Test account ",
+              "folder_id": "folder_id",
+              "id": "id",
+              "name": "terraform",
+              "service_account_id": "service accout id"
+            },
+            "sensitive_attributes": []
+          }
+        ]
+      },
+      {
+        "mode": "managed",
+        "type": "yandex_compute_instance",
+        "name": "test_instance",
+        "provider": "provider[\"registry.terraform.io/yandex-cloud/yandex\"]",
+        "instances": [
+          {
+            "schema_version": 1,
+            "attributes": {
+              "allow_recreate": null,
+              "allow_stopping_for_update": true,
+              "boot_disk": [
+                {
+                  "auto_delete": true,
+                  "device_name": "device name",
+                  "disk_id": "disk id",
+                  "initialize_params": [
+                    {
+                      "block_size": 4096,
+                      "description": "",
+                      "image_id": "images id",
+                      "kms_key_id": "",
+                      "name": "",
+                      "size": 5,
+                      "snapshot_id": "",
+                      "type": "network-hdd"
+                    }
+                  ],
+                  "mode": "READ_WRITE"
+                }
+              ],
+              "created_at": "2025-04-07T15:02:02Z",
+              "description": "",
+              "filesystem": [],
+              "folder_id": "folder id",
+              "fqdn": "test.ru-central1.internal",
+              "gpu_cluster_id": "",
+              "hardware_generation": [
+                {
+                  "generation2_features": [],
+                  "legacy_features": [
+                    {
+                      "pci_topology": "PCI_TOPOLOGY_V2"
+                    }
+                  ]
+                }
+              ],
+              "hostname": "test",
+              "id": "id",
+              "labels": null,
+              "local_disk": [],
+              "maintenance_grace_period": "",
+              "maintenance_policy": null,
+              "metadata": {
+                "user-data": "user data"
+              },
+              "metadata_options": [
+                {
+                  "aws_v1_http_endpoint": 1,
+                  "aws_v1_http_token": 2,
+                  "gce_http_endpoint": 1,
+                  "gce_http_token": 1
+                }
+              ],
+              "name": "test_instance",
+              "network_acceleration_type": "standard",
+              "network_interface": [
+                {
+                  "dns_record": [],
+                  "index": 0,
+                  "ip_address": "192.168.1.9",
+                  "ipv4": true,
+                  "ipv6": false,
+                  "ipv6_address": "",
+                  "ipv6_dns_record": [],
+                  "mac_address": "00:11:22:33:44:55",
+                  "nat": true,
+                  "nat_dns_record": [],
+                  "nat_ip_address": "123.123.123.123",
+                  "nat_ip_version": "IPV4",
+                  "security_group_ids": [],
+                  "subnet_id": "subnet id"
+                }
+              ],
+              "placement_policy": [
+                {
+                  "host_affinity_rules": [],
+                  "placement_group_id": "",
+                  "placement_group_partition": 0
+                }
+              ],
+              "platform_id": "standard-v2",
+              "resources": [
+                {
+                  "core_fraction": 5,
+                  "cores": 2,
+                  "gpus": 0,
+                  "memory": 4
+                }
+              ],
+              "scheduling_policy": [
+                {
+                  "preemptible": true
+                }
+              ],
+              "secondary_disk": [],
+              "service_account_id": "",
+              "status": "running",
+              "timeouts": null,
+              "zone": "ru-central1-a"
+            },
+            "sensitive_attributes": [],
+            "private": "private",
+            "dependencies": [
+              "data.yandex_compute_image.instance_image",
+              "yandex_vpc_network.network",
+              "yandex_vpc_subnet.subnet"
+            ]
+          }
+        ]
+      },
+      {
+        "mode": "managed",
+        "type": "yandex_vpc_network",
+        "name": "network",
+        "provider": "provider[\"registry.terraform.io/yandex-cloud/yandex\"]",
+        "instances": [
+          {
+            "schema_version": 0,
+            "attributes": {
+              "created_at": "2025-04-07T15:01:58Z",
+              "default_security_group_id": "default_security_group_id",
+              "description": "",
+              "folder_id": "folder_id",
+              "id": "id",
+              "labels": {},
+              "name": "test_network",
+              "subnet_ids": [],
+              "timeouts": null
+            },
+            "sensitive_attributes": [],
+            "private": "private"
+          }
+        ]
+      },
+      {
+        "mode": "managed",
+        "type": "yandex_vpc_subnet",
+        "name": "subnet",
+        "provider": "provider[\"registry.terraform.io/yandex-cloud/yandex\"]",
+        "instances": [
+          {
+            "schema_version": 0,
+            "attributes": {
+              "created_at": "2025-04-07T15:02:01Z",
+              "description": "",
+              "dhcp_options": [],
+              "folder_id": "folder_id",
+              "id": "id",
+              "labels": {},
+              "name": "test_subnet",
+              "network_id": "network_id",
+              "route_table_id": "",
+              "timeouts": null,
+              "v4_cidr_blocks": [
+                "192.168.1.0/24"
+              ],
+              "v6_cidr_blocks": [],
+              "zone": "ru-central1-a"
+            },
+            "sensitive_attributes": [],
+            "private": "private",
+            "dependencies": [
+              "yandex_vpc_network.network"
+            ]
+          }
+        ]
+      }
+    ],
+    "check_results": null
+}
+  
