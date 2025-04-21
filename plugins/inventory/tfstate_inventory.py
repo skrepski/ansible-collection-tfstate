@@ -269,13 +269,26 @@ def get_s3_tfstates(s3_config: dict, search_pattern: str) -> list[dict]:
             endpoint, region, bucket, access_key, secret_key
         :arg search_pattern: glob like search pattern
     '''
+    REQUIRED_KEYS: set = ('endpoint', 'access_key', 'secret_key', 'bucket')
+
     try:
         from boto3 import client
+        from botocore import exceptions
     except ImportError:
         raise AnsibleError('Packages boto3 and botocore are required.')
 
-    s3_client = client(service_name='s3', endpoint_url=s3_config['endpoint'],
-                       region_name=s3_config['region'],
+    # check variables
+    for key in REQUIRED_KEYS:
+        try:
+            if not isinstance(s3_config[key], str):
+                raise AnsibleError(f"S3 config {key} value error.")
+        except KeyError:
+            raise AnsibleError(f"S3 config {key} not set.")
+    print(s3_config)
+
+    s3_client = client(service_name='s3',
+                       endpoint_url=s3_config['endpoint'],
+                       region_name=s3_config.get('region', None),
                        aws_access_key_id=s3_config['access_key'],
                        aws_secret_access_key=s3_config['secret_key'],
                        verify=True,
@@ -283,9 +296,12 @@ def get_s3_tfstates(s3_config: dict, search_pattern: str) -> list[dict]:
 
     # Get bucket objects keys
     pattern = glob_to_regex(search_pattern)
-    content: list = s3_client.list_objects(
-        Bucket=s3_config['bucket']
-    )['Contents']
+    try:
+        content: list = s3_client.list_objects(
+            Bucket=s3_config['bucket']
+        )['Contents']
+    except exceptions.ClientError as e:
+        raise AnsibleError(e.args[0])
 
     object_keys: list[str] = list(
         [x['Key'] for x in content if pattern.match(x['Key'])]
@@ -474,11 +490,9 @@ class InventoryModule(BaseInventoryPlugin):
         for key, envs in S3_ENV_MAP.items():
             for env in envs:
                 value = getenv(env)
-                if value:
+                if value is not None:
                     s3_config[key] = value
                     break
-            else:
-                s3_config[key] = None
         if 's3_config' in config_data.keys():
             try:
                 config_data['s3_config'] |= s3_config
