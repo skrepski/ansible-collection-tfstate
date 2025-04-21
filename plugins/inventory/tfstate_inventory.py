@@ -284,7 +284,6 @@ def get_s3_tfstates(s3_config: dict, search_pattern: str) -> list[dict]:
                 raise AnsibleError(f"S3 config {key} value error.")
         except KeyError:
             raise AnsibleError(f"S3 config {key} not set.")
-    print(s3_config)
 
     s3_client = client(service_name='s3',
                        endpoint_url=s3_config['endpoint'],
