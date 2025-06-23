@@ -372,6 +372,25 @@ class TFStateInventory:
                         self.hosts.append(host)
         return
 
+    def _is_ipv4(self, address: str) -> bool:
+        ''' Return ip address IPv4 check result'''
+        parts = address.split('.')
+        if len(parts) != 4:
+            return False
+        try:
+            return all(0 <= int(part) <= 255 for part in parts)
+        except ValueError:
+            return False
+
+    def _sorted_ips(self, ip_addresses) -> list:
+        ''' Return list of ip addresses sorted by IPv4, IPv6'''
+        if not isinstance(ip_addresses, list):
+            return [ip_addresses]
+        return sorted(
+            ip_addresses,
+            key=lambda x: (0 if self._is_ipv4(x) else 1, x)
+        )
+
     def _parse_host(self, instance_data: dict, provider: str) -> TFStateHost:
         ''' Parse instance data by provider'''
         if provider == 'provider["registry.terraform.io/dmacvicar/libvirt"]':
@@ -385,7 +404,8 @@ class TFStateInventory:
     def _parse_lv_host(self, instance_data: dict) -> TFStateHost:
         ''' Parse instance data for dmacvicar/libvirt provider'''
         IP_ADDRESS_KEYS: set = ('network_id')
-        NAT_IP_ADDRESS_KEYS: set = ('macvtap', 'bridge', 'vepa', 'passthrough')
+        NAT_IP_ADDRESS_KEYS: set = ('macvtap', 'bridge', 'vepa',
+                                    'passthrough', 'network_name')
         try:
             attributes = instance_data['attributes']
             network_interfaces = attributes['network_interface']
@@ -397,12 +417,14 @@ class TFStateInventory:
                 for key in IP_ADDRESS_KEYS:
                     value = interface.get(key, '')
                     if value != '' and ip_address is None:
-                        ip_address = interface['addresses'][0]
+                        ip_address = self._sorted_ips(
+                            interface['addresses'])[0]
                 # get nat_ip_address
                 for key in NAT_IP_ADDRESS_KEYS:
                     value = interface.get(key, '')
                     if value != '' and nat_ip_address is None:
-                        nat_ip_address = interface['addresses'][0]
+                        nat_ip_address = self._sorted_ips(
+                            interface['addresses'])[0]
                 if ip_address and nat_ip_address:
                     break
             return TFStateHost(name, ip_address, nat_ip_address)
@@ -420,10 +442,12 @@ class TFStateInventory:
             for interface in network_interfaces:
                 # get ip_address
                 if interface['ip_address'] and ip_address is None:
-                    ip_address = interface['ip_address']
+                    ip_address = self._sorted_ips(
+                        interface['ip_address'])[0]
                 # get nat_ip_address
                 if interface['nat_ip_address'] and nat_ip_address is None:
-                    nat_ip_address = interface['nat_ip_address']
+                    nat_ip_address = self._sorted_ips(
+                        interface['nat_ip_address'])[0]
                 if ip_address and nat_ip_address:
                     break
             return TFStateHost(name, ip_address, nat_ip_address)
